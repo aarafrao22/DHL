@@ -31,7 +31,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -119,7 +123,7 @@ fun VoiceNoteApp() {
                 containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
             ) {
                 Icon(
-                    imageVector = if (isRecording) Icons.AutoMirrored.Filled.Send else Icons.Default.Phone,
+                    imageVector = if (isRecording) Icons.AutoMirrored.Filled.Send else Icons.Default.Mic,
                     contentDescription = if (isRecording) "Stop Recording" else "Record Voice Note",
                     tint = Color.White
                 )
@@ -262,11 +266,15 @@ fun VoiceNoteItem(file: File) {
                 }
                 isPlaying = !isPlaying
             },
-            modifier = Modifier.size(48.dp),
+
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text(if (isPlaying) "Pause" else "Play")
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Pause",
+                tint = Color.White
+            )
         }
 
         // Progress Bar (simulating waveform)
@@ -283,7 +291,7 @@ fun VoiceNoteItem(file: File) {
             ) {
                 val progressWidth = size.width * currentProgress
                 drawLine(
-                    color = Color.Green,
+                    color = Color.Red,
                     start = Offset.Zero,
                     end = Offset(progressWidth, 0f),
                     strokeWidth = 8f,
