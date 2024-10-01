@@ -17,10 +17,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -135,13 +137,14 @@ fun VoiceNoteApp() {
                     .fillMaxSize()
                     .padding(padding)
                     .padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    verticalArrangement = Arrangement.Top
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.End
                 ) {
                     items(voiceNotes.size) { index ->
                         val file = voiceNotes[index]
@@ -151,7 +154,6 @@ fun VoiceNoteApp() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Placeholder for the typing/voice note input area
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -246,36 +248,33 @@ fun VoiceNoteItem(file: File) {
 
     Row(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.78f)
             .padding(vertical = 8.dp)
             .background(
-                color = MaterialTheme.colorScheme.surface,
+                color = Color(0xFFF8C4C4),
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         // Play/Pause Button
-        Button(
-            onClick = {
-                if (isPlaying) {
-                    mediaPlayer.pause()
-                } else {
-                    mediaPlayer.start()
-                }
-                isPlaying = !isPlaying
-            },
+        Icon(
+            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+            contentDescription = if (isPlaying) "Pause" else "Pause",
+            tint = Color.Red,
+            modifier = Modifier
+                .clickable(onClick = {
+                    if (isPlaying) {
+                        mediaPlayer.pause()
+                    } else {
+                        mediaPlayer.start()
+                    }
+                    isPlaying = !isPlaying
+                })
+                .size(32.dp)
+        )
 
-            shape = RoundedCornerShape(24.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (isPlaying) "Pause" else "Pause",
-                tint = Color.White
-            )
-        }
 
         // Progress Bar (simulating waveform)
         Spacer(modifier = Modifier.width(16.dp))
@@ -284,6 +283,7 @@ fun VoiceNoteItem(file: File) {
             modifier = Modifier.weight(1f)
         ) {
             // Waveform/Progress Bar
+            Spacer(modifier = Modifier.height(10.dp))
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -294,12 +294,12 @@ fun VoiceNoteItem(file: File) {
                     color = Color.Red,
                     start = Offset.Zero,
                     end = Offset(progressWidth, 0f),
-                    strokeWidth = 8f,
+                    strokeWidth = 6f,
                     cap = StrokeCap.Round
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Audio Duration and Timestamp
             Row(
