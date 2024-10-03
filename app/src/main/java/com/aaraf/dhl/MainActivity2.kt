@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.aaraf.dhl
 
 import android.Manifest
@@ -7,8 +9,6 @@ import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,20 +32,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.SupervisedUserCircle
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,12 +62,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import java.io.File
@@ -87,32 +95,50 @@ class MainActivity2 : ComponentActivity() {
 fun VoiceNoteApp() {
     val context = LocalContext.current
     var isRecording by remember { mutableStateOf(false) }
+    val selectedVehicle = remember { mutableStateListOf<String>() }
     val voiceNotes = remember { mutableStateListOf<File>() }
     var currentFilePath by remember { mutableStateOf<String?>(null) }
     val mediaRecorder = remember { MediaRecorder() }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted ->
-            if (isGranted) {
-                Toast.makeText(context, "Permission granted", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
+    val permissionLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted ->
+                if (isGranted) {
+//                    Toast.makeText(context, "Permission granted", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            })
 
     LaunchedEffect(Unit) {
         permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Voice Notes") })
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
+    Scaffold(topBar = {
+        TopAppBar(
+            title = {
+                UserHeader("Owais Akhlaq", "Online")
+            },
+            colors = TopAppBarColors(
+                containerColor = Color(0XFFD80613),
+                titleContentColor = Color.White,
+                navigationIconContentColor = Color.White,
+                actionIconContentColor = Color.White,
+                scrolledContainerColor = Color.White
+            ),
+            actions = {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "More",
+                    tint = Color.White,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        )
+    }, floatingActionButton = {
+        FloatingActionButton(
+            onClick = {
+                if (selectedVehicle.size > 0) {
                     if (isRecording) {
                         stopRecording(mediaRecorder, currentFilePath, voiceNotes)
                     } else {
@@ -121,60 +147,150 @@ fun VoiceNoteApp() {
                         }
                     }
                     isRecording = !isRecording
-                },
-                containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = if (isRecording) Icons.AutoMirrored.Filled.Send else Icons.Default.Mic,
-                    contentDescription = if (isRecording) "Stop Recording" else "Record Voice Note",
-                    tint = Color.White
-                )
-            }
-        },
-        content = { padding ->
-            Column(
+
+                } else {
+                    Toast.makeText(context, "Please select a vehicle", Toast.LENGTH_SHORT).show()
+                }
+            },
+            containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(10.dp),
+        ) {
+            Icon(
+                imageVector = if (isRecording) Icons.AutoMirrored.Filled.Send else Icons.Default.Mic,
+                contentDescription = if (isRecording) "Stop Recording" else "Record Voice Note",
+                tint = Color.White
+            )
+        }
+    }, content = { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.End
             ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.End
-                ) {
-                    items(voiceNotes.size) { index ->
-                        val file = voiceNotes[index]
-                        VoiceNoteItem(file)
-                    }
+                items(voiceNotes.size) { index ->
+                    val file = voiceNotes[index]
+                    VoiceNoteItem(file, selectedVehicle[index])
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(24.dp)
-                        )
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (isRecording) "Recording..." else "Hold to Record",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Light,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(24.dp)
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+//                    Text(
+//                        text = if (isRecording) "Recording..." else "Hold to Record",
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.Light,
+//                        modifier = Modifier.weight(1f)
+//                    )
+                CustomField(
+                    "Vehicle",
+                    listOf("BMY-083", "BXT-848", "BNN-536", "KMK-2777", "KLT-9468"),
+                    onSelectionChange = {
+                        selectedVehicle.add(it)
+                    })
+
             }
         }
-    )
+    })
+}
+
+@Composable
+fun UserHeader(name: String, status: String) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.SupervisedUserCircle,
+            contentDescription = "More",
+            tint = Color.White,
+            modifier = Modifier
+                .padding(4.dp)
+                .size(48.dp)
+        )
+        Column {
+            Text(
+                name,
+                style = TextStyle(
+                    letterSpacing = 0.1.sp,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+            Text(status, style = TextStyle(fontSize = 11.sp))
+        }
+    }
+}
+
+@Composable
+fun CustomField(
+    message: String = "",
+    mCities: List<String> = emptyList(),
+    isEnabled: Boolean = true,
+    text: String = "",
+    onSelectionChange: ((String) -> Unit)? = null
+) {
+
+    var mExpanded by remember { mutableStateOf(false) }
+    var mSelectedText by remember { mutableStateOf(text) }
+    var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
+
+    val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp
+    else Icons.Filled.KeyboardArrowDown
+
+    Column(Modifier.padding(bottom = 10.dp)) {
+
+        OutlinedTextField(
+            value = mSelectedText,
+            onValueChange = { mSelectedText = it },
+            enabled = isEnabled, // Control enabling/disabling here
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .onGloballyPositioned { coordinates ->
+                    mTextFieldSize = coordinates.size.toSize()
+                },
+            label = { Text(message, fontSize = 14.sp) },
+            trailingIcon = {
+                Icon(icon,
+                    "contentDescription",
+                    Modifier.clickable { if (isEnabled) mExpanded = !mExpanded })
+            },
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        DropdownMenu(
+            expanded = mExpanded,
+            onDismissRequest = { mExpanded = false },
+            modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+        ) {
+            mCities.forEach { label ->
+                DropdownMenuItem(onClick = {
+                    mSelectedText = label
+                    mExpanded = false
+                    onSelectionChange?.invoke(label)
+                }, text = {
+                    Text(text = label)
+                })
+            }
+        }
+    }
 }
 
 fun startRecording(mediaRecorder: MediaRecorder, context: Context): String? {
@@ -206,9 +322,8 @@ fun stopRecording(mediaRecorder: MediaRecorder, filePath: String?, voiceNotes: M
     }
 }
 
-
 @Composable
-fun VoiceNoteItem(file: File) {
+fun VoiceNoteItem(file: File, selectedVehicle: String) {
     val context = LocalContext.current
     val mediaPlayer = remember { MediaPlayer() }
     var isPlaying by remember { mutableStateOf(false) }
@@ -216,8 +331,6 @@ fun VoiceNoteItem(file: File) {
     var totalDuration by remember { mutableIntStateOf(0) }
     var currentPosition by remember { mutableIntStateOf(0) }
 
-    // Handler for updating progress while playing
-    val handler = remember { Handler(Looper.getMainLooper()) }
 
     LaunchedEffect(isPlaying) {
         if (isPlaying) {
@@ -234,7 +347,6 @@ fun VoiceNoteItem(file: File) {
         }
     }
 
-    // Setup the media player when the file is loaded
     LaunchedEffect(file) {
         try {
             mediaPlayer.reset()
@@ -246,84 +358,93 @@ fun VoiceNoteItem(file: File) {
         }
     }
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth(0.78f)
             .padding(vertical = 8.dp)
             .background(
-                color = Color(0xFFF8C4C4),
-                shape = RoundedCornerShape(12.dp)
+                color = Color(0xFFF8C4C4), shape = RoundedCornerShape(12.dp)
             )
             .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Play/Pause Button
-        Icon(
-            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-            contentDescription = if (isPlaying) "Pause" else "Pause",
-            tint = Color.Red,
-            modifier = Modifier
-                .clickable(onClick = {
-                    if (isPlaying) {
-                        mediaPlayer.pause()
-                    } else {
-                        mediaPlayer.start()
-                    }
-                    isPlaying = !isPlaying
-                })
-                .size(32.dp)
+        Text(
+            text = selectedVehicle,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xffAA020D),
+            modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
         )
-
-
-        // Progress Bar (simulating waveform)
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(
-            modifier = Modifier.weight(1f)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Waveform/Progress Bar
-            Spacer(modifier = Modifier.height(10.dp))
-            Canvas(
+
+
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Pause",
+                tint = Color.Red,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-            ) {
-                val progressWidth = size.width * currentProgress
-                drawLine(
-                    color = Color.Red,
-                    start = Offset.Zero,
-                    end = Offset(progressWidth, 0f),
-                    strokeWidth = 6f,
-                    cap = StrokeCap.Round
-                )
-            }
+                    .clickable(onClick = {
+                        if (isPlaying) {
+                            mediaPlayer.pause()
+                        } else {
+                            mediaPlayer.start()
+                        }
+                        isPlaying = !isPlaying
+                    })
+                    .size(32.dp)
+            )
 
-            Spacer(modifier = Modifier.height(6.dp))
 
-            // Audio Duration and Timestamp
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+            // Progress Bar (simulating waveform)
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = formatDuration(currentPosition),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Light,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = formatDuration(totalDuration),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Light,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                // Waveform/Progress Bar
+                Spacer(modifier = Modifier.height(10.dp))
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                ) {
+                    val progressWidth = size.width * currentProgress
+                    drawLine(
+                        color = Color.Red,
+                        start = Offset.Zero,
+                        end = Offset(progressWidth, 0f),
+                        strokeWidth = 6f,
+                        cap = StrokeCap.Round
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Audio Duration and Timestamp
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = formatDuration(currentPosition),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = formatDuration(totalDuration),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }
 }
 
-// Helper function to format milliseconds into MM:SS format
 @SuppressLint("DefaultLocale")
 fun formatDuration(durationMs: Int): String {
     val minutes = (durationMs / 1000) / 60
