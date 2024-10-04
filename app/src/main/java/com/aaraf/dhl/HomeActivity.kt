@@ -120,7 +120,7 @@ fun VoiceNoteApp() {
                 UserHeader("Owais Akhlaq", "Online")
             },
             colors = TopAppBarColors(
-                containerColor = Color(0XFFD80613),
+                containerColor = Color(0XFFD40511),
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White,
                 actionIconContentColor = Color.White,
@@ -371,7 +371,7 @@ fun VoiceNoteItem(file: File, selectedVehicle: String) {
             text = selectedVehicle,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xffAA020D),
+            color = Color(0xffD40511),
             modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
         )
         Row(

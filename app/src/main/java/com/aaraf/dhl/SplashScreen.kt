@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
         }
 
         Handler().postDelayed({
-            startActivity(android.content.Intent(this, MainActivity2::class.java))
+            startActivity(android.content.Intent(this, LoginActivity::class.java))
             finish()
         },3000)
     }
